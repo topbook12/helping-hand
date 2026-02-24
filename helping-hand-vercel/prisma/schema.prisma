@@ -1,0 +1,148 @@
+// PostgreSQL Schema for Production (Supabase)
+// This schema is used for both development and production
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+// User model for Admin and Teachers
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("TEACHER") // ADMIN or TEACHER
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  books        Book[]
+  notes        Note[]
+  notices      Notice[]
+  teacherNotes Note[] @relation("NoteTeacher")
+}
+
+// Subject/Course model
+model Subject {
+  id        String   @id @default(cuid())
+  name      String
+  code      String?
+  semester  String?
+  createdAt DateTime @default(now())
+  
+  books Book[]
+  notes Note[]
+}
+
+// Book model for ebooks
+model Book {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?  @db.Text
+  writerName    String
+  publisher     String?
+  year          String?
+  session       String?
+  semester      String?
+  fileUrl       String   @db.Text
+  thumbnailUrl  String?  @db.Text
+  fileSize      Float?
+  downloadCount Int      @default(0)
+  likeCount     Int      @default(0)
+  viewCount     Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  uploaderId String
+  uploader   User    @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  subjectId  String?
+  subject    Subject? @relation(fields: [subjectId], references: [id])
+}
+
+// Note model for class notes
+model Note {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?  @db.Text
+  topic         String?
+  session       String?
+  semester      String?
+  fileUrl       String   @db.Text
+  thumbnailUrl  String?  @db.Text
+  fileType      String   @default("PDF")
+  fileSize      Float?
+  downloadCount Int      @default(0)
+  likeCount     Int      @default(0)
+  viewCount     Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  uploaderId String
+  uploader   User  @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  teacherId  String?
+  teacher    User? @relation("NoteTeacher", fields: [teacherId], references: [id])
+  subjectId  String?
+  subject    Subject? @relation(fields: [subjectId], references: [id])
+}
+
+// Notice model for notices
+model Notice {
+  id        String    @id @default(cuid())
+  title     String
+  content   String    @db.Text
+  imageUrl  String?   @db.Text
+  priority  String    @default("NORMAL")
+  isActive  Boolean   @default(true)
+  expireAt  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  creatorId String
+  creator   User @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+}
+
+// Student Deal model for hot deals
+model StudentDeal {
+  id            String    @id @default(cuid())
+  title         String
+  description   String?   @db.Text
+  imageUrl      String?   @db.Text
+  affiliateUrl  String    @db.Text
+  originalPrice Float?
+  dealPrice     Float?
+  discount      String?
+  category      String?
+  isActive      Boolean   @default(true)
+  expiresAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// Social Link model for department social media
+model SocialLink {
+  id        String   @id @default(cuid())
+  platform  String
+  url       String   @db.Text
+  icon      String?
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Site Settings model
+model SiteSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String   @db.Text
+  description String?
+  updatedAt   DateTime @updatedAt
+}
